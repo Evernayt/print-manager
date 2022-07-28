@@ -1,0 +1,24 @@
+﻿<?xml version='1.0' encoding='utf-8'?>
+<SettingsFile xmlns="http://schemas.microsoft.com/VisualStudio/2004/01/settings" CurrentProfile="(Default)" GeneratedClassNamespace="Print_Manager.Properties" GeneratedClassName="Settings">
+  <Profiles />
+  <Settings>
+    <Setting Name="HideLaserPrinters" Type="System.Boolean" Scope="User">
+      <Value Profile="(Default)">False</Value>
+    </Setting>
+    <Setting Name="HidePlotters" Type="System.Boolean" Scope="User">
+      <Value Profile="(Default)">False</Value>
+    </Setting>
+    <Setting Name="HideVirtualPrinters" Type="System.Boolean" Scope="User">
+      <Value Profile="(Default)">False</Value>
+    </Setting>
+    <Setting Name="LaserPrinters" Type="System.String" Scope="User">
+      <Value Profile="(Default)">canon,ricoh,1320,1536</Value>
+    </Setting>
+    <Setting Name="Plotters" Type="System.String" Scope="User">
+      <Value Profile="(Default)">t520,3880,7800</Value>
+    </Setting>
+    <Setting Name="VirtualPrinters" Type="System.String" Scope="User">
+      <Value Profile="(Default)">foxit,onenote</Value>
+    </Setting>
+  </Settings>
+</SettingsFile>
