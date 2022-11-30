@@ -9,19 +9,144 @@ using System.Management;
 using System.ServiceProcess;
 using System.ComponentModel;
 using Print_Manager.Properties;
+using System.Threading.Tasks;
+using System.Runtime.InteropServices;
+using System.Drawing.Imaging;
+using System.Reflection;
+using System.Security.Principal;
 
 namespace Print_Manager
 {
     public partial class fmMain : Form
     {
-        private string printerNameValue;
+        private string selectedPrinterFullName;
+        private string selectedPrinterShortName;
         private string[] virtualPrinters;
         private string[] laserPrinters;
         private string[] plotters;
+        private bool isLoading = false;
+        private const string PAUSED = " — Приостановлен";
+        private PrintServer printServer;
+        private ToolTip toolTip;
+
+        #region FastGIF
+        [DllImport("kernel32.dll")]
+        static extern bool CreateTimerQueueTimer(out IntPtr phNewTimer,
+        IntPtr TimerQueue, WaitOrTimerDelegate Callback, IntPtr Parameter,
+        uint DueTime, uint Period, uint Flags);
+        [DllImport("kernel32.dll")]
+        static extern bool ChangeTimerQueueTimer(IntPtr TimerQueue, IntPtr Timer,
+            uint DueTime, uint Period);
+        [DllImport("kernel32.dll")]
+        static extern bool DeleteTimerQueueTimer(IntPtr TimerQueue,
+            IntPtr Timer, IntPtr CompletionEvent);
+        public delegate void WaitOrTimerDelegate(IntPtr lpParameter,
+            bool TimerOrWaitFired);
+
+        public static WaitOrTimerDelegate UpdateFn;
+
+        public enum ExecuteFlags
+        {
+            WT_EXECUTEINIOTHREAD = 0x00000001,
+        };
+
+        private Image gif;
+        private int frameCount = -1;
+        private uint[] frameIntervals;
+        private int currentFrame = 0;
+        private static object locker = new object();
+        private IntPtr timerPtr;
+
+        private void InitializeFastGIF()
+        {
+            SetStyle(ControlStyles.AllPaintingInWmPaint |
+            ControlStyles.OptimizedDoubleBuffer, true);
+            UpdateFn = new WaitOrTimerDelegate(UpdateFrame);
+        }
+
+        private void AnimateFastGIF(Image image)
+        {
+            gif = image;
+            frameCount = gif.GetFrameCount(FrameDimension.Time);
+            PropertyItem propItem = gif.GetPropertyItem(20736);
+            int propIndex = 0;
+            frameIntervals = new uint[frameCount];
+            for (int i = 0; i < frameCount; i++)
+            {
+                frameIntervals[i] = BitConverter.ToUInt32(propItem.Value,
+                    propIndex) * 10;
+                propIndex += 4;
+            }
+
+            ShowFrame();
+            CreateTimerQueueTimer(out timerPtr, IntPtr.Zero, UpdateFn,
+                IntPtr.Zero, frameIntervals[0], 100000,
+                (uint)ExecuteFlags.WT_EXECUTEINIOTHREAD);
+        }
+
+        private void UpdateFrame(IntPtr lpParam, bool timerOrWaitFired)
+        {
+            currentFrame = (currentFrame + 1) % frameCount;
+            ShowFrame();
+            ChangeTimerQueueTimer(IntPtr.Zero, timerPtr,
+                frameIntervals[currentFrame], 100000);
+        }
+
+        private void ShowFrame()
+        {
+            lock (locker)
+            {
+                gif.SelectActiveFrame(FrameDimension.Time, currentFrame);
+            }
+            pFastGif.Invalidate();
+        }
+
+        private void pFastGif_Paint(object sender, PaintEventArgs e)
+        {
+            base.OnPaint(e);
+
+            lock (locker)
+            {
+                e.Graphics.DrawImage(gif, pFastGif.ClientRectangle);
+            }
+        }
+
+        private void ClearFastGIFTimer()
+        {
+            DeleteTimerQueueTimer(IntPtr.Zero, timerPtr, IntPtr.Zero);
+        }
+        #endregion
+
+        private bool IsRunAsAdministrator()
+        {
+            WindowsIdentity windowsIdentity = WindowsIdentity.GetCurrent();
+            WindowsPrincipal windowsPrincipal = new WindowsPrincipal(windowsIdentity);
+
+            return windowsPrincipal.IsInRole(WindowsBuiltInRole.Administrator);
+        }
 
         public fmMain()
         {
             InitializeComponent();
+            InitializeFastGIF();
+
+            dataGridView1.Columns["isDefaultPrinter"].DefaultCellStyle.NullValue = null;
+            dataGridView1.Columns["isNetworkPrinter"].DefaultCellStyle.NullValue = null;
+            dataGridView1.Columns["QueueState"].DefaultCellStyle.NullValue = null;
+
+            dataGridView1.ShowCellToolTips = false;
+
+            Text += $" v.{Application.ProductVersion}";
+        }
+
+        private void fmMain_Load(object sender, EventArgs e)
+        {
+            tsmiHideLaserPrinters.Checked = Settings.Default.HideLaserPrinters;
+            tsmiHidePlotters.Checked = Settings.Default.HidePlotters;
+            tsmiHideVirtualPrinters.Checked = Settings.Default.HideVirtualPrinters;
+
+            ReadPrinters();
+            LoadPrintersToDVG();
         }
 
         private void PrintUI(string arg, string printerName)
@@ -29,31 +154,39 @@ namespace Print_Manager
             Process.Start("RunDll32.exe", $"Printui.dll,PrintUIEntry /{ arg } /n \"{ printerName }\"");
         }
 
-        private bool DeleteLocalPrinter(string PrinterName)
+        private string GetPrinterShortName(string printerFullName)
+        {
+            return Path.GetFileName(printerFullName);
+        }
+
+        private void DeleteLocalPrinter(string printerName)
         {
             try
             {
-                PrintUI("dl /n", PrinterName);
-                return true;
+                PrintUI("dl", printerName);
+                string printerShortName = GetPrinterShortName(printerName);
+                Notification($"Принтер {printerName} удален", Color.Red);
             }
             catch
             {
-                return false;
+                Notification("Не удалось удалить принтер", Color.Red);
             }
         }
 
-        internal static void SpotTroubleUsingQueueAttributes(ref string statusReport, PrintQueue pq)
+        private void SpotTroubleUsingQueueAttributes(ref string statusReport, PrintQueue pq)
         {
-            if ((pq.QueueStatus & PrintQueueStatus.PaperProblem) == PrintQueueStatus.PaperProblem)
+            if ((pq.QueueStatus & PrintQueueStatus.None) == PrintQueueStatus.None)
+                statusReport += "Готов";
+            else if ((pq.QueueStatus & PrintQueueStatus.Error) == PrintQueueStatus.Error)
+                statusReport += "В состоянии ошибки";
+            else if ((pq.QueueStatus & PrintQueueStatus.ServerUnknown) == PrintQueueStatus.ServerUnknown)
+                statusReport += "В состоянии ошибки";
+            else if ((pq.QueueStatus & PrintQueueStatus.PaperProblem) == PrintQueueStatus.PaperProblem)
                 statusReport += "Проблемы с бумагой";
             else if ((pq.QueueStatus & PrintQueueStatus.NoToner) == PrintQueueStatus.NoToner)
                 statusReport += "Закончился тонер (краска)";
             else if ((pq.QueueStatus & PrintQueueStatus.DoorOpen) == PrintQueueStatus.DoorOpen)
                 statusReport += "Открыта крышка";
-            else if ((pq.QueueStatus & PrintQueueStatus.Error) == PrintQueueStatus.Error)
-                statusReport += "В состоянии ошибки";
-            else if ((pq.QueueStatus & PrintQueueStatus.ServerUnknown) == PrintQueueStatus.ServerUnknown)
-                statusReport += "В состоянии ошибки";
             else if ((pq.QueueStatus & PrintQueueStatus.NotAvailable) == PrintQueueStatus.NotAvailable)
                 statusReport += "Недоступен";
             else if ((pq.QueueStatus & PrintQueueStatus.Offline) == PrintQueueStatus.Offline)
@@ -88,8 +221,6 @@ namespace Print_Manager
                 statusReport += "Не удается напечатать текущую страницу";
             else if ((pq.QueueStatus & PrintQueueStatus.PendingDeletion) == PrintQueueStatus.PendingDeletion)
                 statusReport += "Идет удаление задания из очереди печати";
-            else if ((pq.QueueStatus & PrintQueueStatus.None) == PrintQueueStatus.None)
-                statusReport += "Готов";
         }
 
         private void CellColor()
@@ -100,217 +231,239 @@ namespace Print_Manager
                     row.DefaultCellStyle.ForeColor = Color.Gray;
                 else if (row.Cells["Status"].Value.ToString() == "В состоянии ошибки")
                     row.DefaultCellStyle.ForeColor = Color.Maroon;
+                else if (Convert.ToBoolean(row.Cells["isPausedPrinter"].Value))
+                    row.DefaultCellStyle.ForeColor = Color.Maroon;
                 else
-                    row.Cells["Status"].Style.BackColor = Color.Empty;
+                    row.DefaultCellStyle.ForeColor = Color.Empty;
             }
         }
 
-        private void LoadPrintersToDVG()
+        private void Loader(bool isShowing, bool isError = false)
         {
-            dataGridView1.Rows.Clear();
+            isLoading = isShowing;
 
-            //List<PrinterSettings> printerSettings = new List<PrinterSettings>();
-            foreach (string printerName in PrinterSettings.InstalledPrinters)
+            if (isShowing)
             {
-                PrinterSettings printer = new PrinterSettings();
-                printer.PrinterName = printerName;
-
-                if (printer.IsValid)
+                if (isError)
                 {
-                    string printerIsDefault = "";
-                    string PrinterJobsCount = "";
-                    string PrinterStatus = "";
-                    string statusReport = "";
-                    string pName = Path.GetFileName(printerName); // очистка от сетевого пути
+                    isLoading = false;
+                    AnimateFastGIF(Resources.error);
+                    lblLoaderMsg.Text = "Ошибка сервера печати";
+                    btnLoader.Visible = true;
+                }
+                else
+                {
+                    AnimateFastGIF(Resources.loading);
+                    lblLoaderMsg.Text = "Обновление";
+                    btnLoader.Visible = false;
+                }
+            }
+            else
+            {
+                ClearFastGIFTimer();
+            }
 
-                    PrintQueueCollection myPrintQueues = new PrintServer().GetPrintQueues();
-                    foreach (PrintQueue pq in myPrintQueues)
+            pInfo.Visible = isShowing;
+            dataGridView1.Visible = !isShowing;
+        }
+
+        private async void LoadPrintersToDVG(bool notif = true)
+        {
+            try
+            {
+                if (isLoading) return;
+                Loader(true);
+                dataGridView1.Rows.Clear();
+
+                await Task.Run(() =>
+                {
+                    ManagementObjectSearcher searcher = new ManagementObjectSearcher("SELECT * FROM Win32_Printer");
+                    PrintServer newPrintServer = new PrintServer();
+                    PrintQueueCollection printQueues = newPrintServer.GetPrintQueues();
+                    Invoke((MethodInvoker)(() => printServer = newPrintServer));
+
+                    foreach (ManagementObject win32_printer in searcher.Get())
                     {
-                        if (printerName == pq.Name)
+                        string printerFullName = win32_printer["Name"].ToString();
+                        bool isOffline = (bool)win32_printer["WorkOffline"];
+
+                        PrinterSettings printer = new PrinterSettings
                         {
-                            if (printer.IsDefaultPrinter)
-                                printerIsDefault = "✔";
+                            PrinterName = printerFullName
+                        };
 
-                            PrinterJobsCount = pq.NumberOfJobs.ToString();
-
-                            SpotTroubleUsingQueueAttributes(ref statusReport, pq);
-                            PrinterStatus = statusReport;
-
-                            string PrinterHost = pq.HostingPrintServer.Name;
-                        }
-                    }
-
-                    bool isLaserPrinter = false;
-                    if (tsmiHideLaserPrinters.Checked)
-                    {
-                        foreach (string laserPrinter in laserPrinters)
+                        if (printer.IsValid)
                         {
-                            if (pName.ToLower().Contains(laserPrinter))
-                                isLaserPrinter = true;
-                        }
-                    }
+                            string printerJobsCount = "";
+                            string printerStatus = "";
+                            string printerName = GetPrinterShortName(printerFullName);
+                            bool isDefaultPrinter = printer.IsDefaultPrinter;
+                            bool isNetworkPrinter = printerName != printerFullName;
+                            bool isPausedPrinter = false;
 
-                    bool isPlotter = false;
-                    if (tsmiHidePlotters.Checked)
-                    {
-                        foreach (string plotter in plotters)
-                        {
-                            if (pName.ToLower().Contains(plotter))
-                                isPlotter = true;
-                        }
-                    }
+                            foreach (PrintQueue pq in printQueues)
+                            {
+                                if (printerFullName == pq.Name)
+                                {
+                                    isPausedPrinter = pq.IsPaused;
 
-                    bool isVirtualPrinter = false;
-                    if (tsmiHideVirtualPrinters.Checked)
-                    {
-                        foreach (string virtualPrinter in virtualPrinters)
-                        {
-                            if (pName.ToLower().Contains(virtualPrinter))
-                                isVirtualPrinter = true;
-                        }
-                    }
+                                    printerJobsCount = pq.NumberOfJobs.ToString();
+                                    if (isOffline)
+                                    {
+                                        printerStatus = "Отключен";
+                                    }
+                                    else
+                                    {
+                                        SpotTroubleUsingQueueAttributes(ref printerStatus, pq);
+                                    }
+                                    break;
+                                }
+                            }
 
-                    if ((!tsmiHidePlotters.Checked || !isPlotter) && (!tsmiHideLaserPrinters.Checked || !isLaserPrinter) && (!tsmiHideVirtualPrinters.Checked || !isVirtualPrinter))
-                    {
-                        int rowNum = dataGridView1.Rows.Add();
-                        dataGridView1.Rows[rowNum].Cells[0].Value = pName;
-                        dataGridView1.Rows[rowNum].Cells[1].Value = PrinterJobsCount;
-                        dataGridView1.Rows[rowNum].Cells[2].Value = PrinterStatus;
-                        dataGridView1.Rows[rowNum].Cells[3].Value = printerName;
-                        dataGridView1.Rows[rowNum].Cells[4].Value = printerIsDefault;
+                            if (!IsNeedFiltered(printerName))
+                            {
+                                int rowNum = 0;
+                                Invoke((MethodInvoker)(() => rowNum = dataGridView1.Rows.Add()));
+
+                                if (isDefaultPrinter)
+                                    dataGridView1.Rows[rowNum].Cells["isDefaultPrinter"].Value = Resources.check;
+
+                                if (isNetworkPrinter)
+                                    dataGridView1.Rows[rowNum].Cells["isNetworkPrinter"].Value = Resources.wifi;
+
+                                dataGridView1.Rows[rowNum].Cells["Printer"].Value = printerName;
+                                dataGridView1.Rows[rowNum].Cells["PrintQueue"].Value = printerJobsCount;
+                                dataGridView1.Rows[rowNum].Cells["Status"].Value = printerStatus;
+                                dataGridView1.Rows[rowNum].Cells["PrinterFullName"].Value = printerFullName;
+                                dataGridView1.Rows[rowNum].Cells["Default"].Value = isDefaultPrinter;
+
+                                if (isPausedPrinter)
+                                {
+                                    dataGridView1.Rows[rowNum].Cells["QueueState"].Value = Resources.play;
+                                    dataGridView1.Rows[rowNum].Cells["isPausedPrinter"].Value = true;
+                                    dataGridView1.Rows[rowNum].Cells["Status"].Value += PAUSED;
+                                }
+                                else if (!isNetworkPrinter)
+                                {
+                                    dataGridView1.Rows[rowNum].Cells["QueueState"].Value = Resources.pause;
+                                }
+
+                                if (printerFullName == selectedPrinterFullName)
+                                {
+                                    dataGridView1.Rows[rowNum].Selected = true;
+                                }
+                            }
+                        }
                     }
 
                     CellColor();
-                    dataGridView1.Sort(dataGridView1.Columns[0], ListSortDirection.Ascending);
-                }
+                });
+
+                Loader(false);
+                dataGridView1.Sort(dataGridView1.Columns["Printer"], ListSortDirection.Ascending);
+                if (notif) Notification("Обновлено", Color.Green);
+            }
+            catch
+            {
+                Loader(true, true);
             }
         }
 
-        public static void RenamePrinter(string sPrinterName, string newName)
+        private bool IsNeedFiltered(string printerName)
         {
-            ManagementScope oManagementScope = new ManagementScope(ManagementPath.DefaultPath);
-            oManagementScope.Connect();
-
-            SelectQuery oSelectQuery = new SelectQuery
+            if (tsmiHideLaserPrinters.Checked)
             {
-                QueryString = @"SELECT * FROM Win32_Printer WHERE Name = '" + sPrinterName.Replace("\\", "\\\\") + "'"
-            };
-
-            ManagementObjectSearcher oObjectSearcher =
-                new ManagementObjectSearcher(oManagementScope, oSelectQuery);
-            ManagementObjectCollection oObjectCollection = oObjectSearcher.Get();
-
-            if (oObjectCollection.Count == 0)
-                return;
-
-            foreach (ManagementObject oItem in oObjectCollection)
-            {
-                int state = (int)oItem.InvokeMethod("RenamePrinter", new object[] { newName });
-                switch (state)
+                foreach (string laserPrinter in laserPrinters)
                 {
-                    case 0:
-                        return;
-                    case 1:
-                        throw new AccessViolationException("Access Denied");
-                    case 1801:
-                        throw new ArgumentException("Invalid Printer Name");
-                    default:
-                        break;
+                    if (printerName.ToLower().Contains(laserPrinter))
+                        return true;
                 }
             }
-        }
 
-        private void fmMain_Load(object sender, EventArgs e)
-        {
-            tsmiHideLaserPrinters.Checked = Settings.Default.HideLaserPrinters;
-            tsmiHidePlotters.Checked = Settings.Default.HidePlotters;
-            tsmiHideVirtualPrinters.Checked = Settings.Default.HideVirtualPrinters;
+            if (tsmiHidePlotters.Checked)
+            {
+                foreach (string plotter in plotters)
+                {
+                    if (printerName.ToLower().Contains(plotter))
+                        return true;
+                }
+            }
 
-            ReadPrinters();
-            LoadPrintersToDVG();
+            if (tsmiHideVirtualPrinters.Checked)
+            {
+                foreach (string virtualPrinter in virtualPrinters)
+                {
+                    if (printerName.ToLower().Contains(virtualPrinter))
+                        return true;
+                }
+            }
+
+            return false;
         }
 
         private void dataGridView1_CellMouseDoubleClick(object sender, DataGridViewCellMouseEventArgs e)
         {
-            if (e.RowIndex != -1)
-                PrintUI("o", dataGridView1.CurrentRow.Cells[3].Value.ToString());
+            if (e.RowIndex != -1 && e.ColumnIndex != 7)
+                PrintUI("o", dataGridView1.CurrentRow.Cells["PrinterFullName"].Value.ToString());
         }
 
         private void openPrintQueueToolStripMenuItem_Click(object sender, EventArgs e)
         {
             if (dataGridView1.CurrentRow.Index != -1)
-                PrintUI("o", printerNameValue);
+                PrintUI("o", selectedPrinterFullName);
         }
 
         private void useAsDefaultToolStripMenuItem_Click(object sender, EventArgs e)
         {
             if (dataGridView1.CurrentRow.Index != -1)
             {
-                PrintUI("y", printerNameValue);
-                LoadPrintersToDVG();
+                try
+                {
+                    PrintUI("y", selectedPrinterFullName);
+                    Notification($"{selectedPrinterShortName} установлен по умолчанию", Color.Green);
+                    LoadPrintersToDVG(false);
+                }
+                catch
+                {
+                    Notification($"Не удалось установить {selectedPrinterShortName} по умолчанию", Color.Green);
+                }
             }
         }
 
         private void printATestPageToolStripMenuItem_Click(object sender, EventArgs e)
         {
             if (dataGridView1.CurrentRow.Index != -1)
-                PrintUI("k", printerNameValue);
+                PrintUI("k", selectedPrinterFullName);
         }
 
         private void Notification(string message, Color color)
         {
-            tslblNotifications.Text = message;
+            tslblNotifications.Text = $"{message} — {DateTime.Now.ToShortTimeString()}";
             tslblNotifications.ForeColor = color;
+            timer1.Stop();
             timer1.Start();
         }
 
-        private void renameToolStripMenuItem_Click(object sender, EventArgs e)
+        private void NotificationClear()
         {
-            if (dataGridView1.CurrentRow.Index != -1)
-            {
-                if (tstbxPrinterName.Text != "" && tstbxPrinterName.Text != "Введите имя")
-                {
-                    RenamePrinter(printerNameValue, tstbxPrinterName.Text);
-                    LoadPrintersToDVG();
-                    tstbxPrinterName.Text = "Введите имя";
-
-                    Notification("Принтер успешно переименован", Color.Green);
-                }
-                else
-                {
-                    Notification("Введите имя", Color.Red);
-                }
-            }
+            tslblNotifications.Text = "";
         }
 
-        private void tstbxPrinterName_MouseEnter(object sender, EventArgs e)
+        private void timer1_Tick(object sender, EventArgs e)
         {
-            if (tstbxPrinterName.Text == "Введите имя")
-            {
-                tstbxPrinterName.Text = "";
-                tstbxPrinterName.ForeColor = Color.Black;
-            }
-        }
-
-        private void tstbxPrinterName_MouseLeave(object sender, EventArgs e)
-        {
-            if (tstbxPrinterName.Text == "")
-            {
-                tstbxPrinterName.Text = "Введите имя";
-                tstbxPrinterName.ForeColor = Color.Gray;
-            }
+            NotificationClear();
+            timer1.Stop();
         }
 
         private void deletePrinterToolStripMenuItem_Click(object sender, EventArgs e)
         {
             if (dataGridView1.CurrentRow.Index != -1)
             {
-                string message = "Вы действительно хотите удалить этот принтер?" + Environment.NewLine + dataGridView1.CurrentRow.Cells[0].Value.ToString();
+                string message = $"Вы действительно хотите удалить принтер {selectedPrinterShortName}?";
                 var result = MessageBox.Show(message, Text, MessageBoxButtons.YesNo, MessageBoxIcon.Question, MessageBoxDefaultButton.Button2);
                 if (result == DialogResult.Yes)
                 {
-                    if (DeleteLocalPrinter(printerNameValue))
-                        LoadPrintersToDVG();
+                    DeleteLocalPrinter(selectedPrinterFullName);
                 }
             }
         }
@@ -318,19 +471,54 @@ namespace Print_Manager
         private void printerPropertiesToolStripMenuItem_Click(object sender, EventArgs e)
         {
             if (dataGridView1.CurrentRow.Index != -1)
-                PrintUI("p", printerNameValue);
+                PrintUI("p", selectedPrinterFullName);
         }
 
         private void dataGridView1_CellMouseDown(object sender, DataGridViewCellMouseEventArgs e)
         {
-            if (e.Button == MouseButtons.Right && e.RowIndex != -1)
+            if (e.RowIndex != -1)
             {
-                dataGridView1.ClearSelection();
-                dataGridView1[e.ColumnIndex, e.RowIndex].Selected = true;
-                printerNameValue = dataGridView1[3, e.RowIndex].Value.ToString();
-                string printerDefaultValue = dataGridView1[4, e.RowIndex].Value.ToString();
+                selectedPrinterFullName = dataGridView1["PrinterFullName", e.RowIndex].Value.ToString();
+                selectedPrinterShortName = dataGridView1["Printer", e.RowIndex].Value.ToString();
 
-                useAsDefaultToolStripMenuItem.Checked = printerDefaultValue != "";
+                if (e.Button == MouseButtons.Right)
+                {
+                    dataGridView1[e.ColumnIndex, e.RowIndex].Selected = true;
+                    bool isDefaultPrinter = Convert.ToBoolean(dataGridView1["Default", e.RowIndex].Value);
+                    useAsDefaultToolStripMenuItem.Checked = isDefaultPrinter;
+                }
+                else if (e.ColumnIndex == 7)
+                {
+                    DataGridViewRow row = dataGridView1.Rows[e.RowIndex];
+
+                    if (row.Cells[e.ColumnIndex].Value == null) return;
+
+                    try
+                    {
+                        PrintQueue printQueue = new PrintQueue(printServer, selectedPrinterFullName, PrintSystemDesiredAccess.AdministratePrinter);
+
+                        if (Convert.ToBoolean(row.Cells["isPausedPrinter"].Value))
+                        {
+                            printQueue.Resume();
+                            row.Cells["isPausedPrinter"].Value = false;
+                            row.Cells[e.ColumnIndex].Value = Resources.pause_hover;
+                            row.Cells["Status"].Value = row.Cells["Status"].Value.ToString().Replace(PAUSED, "");
+                        }
+                        else
+                        {
+                            printQueue.Pause();
+                            row.Cells["isPausedPrinter"].Value = true;
+                            row.Cells[e.ColumnIndex].Value = Resources.play_hover;
+                            row.Cells["Status"].Value += PAUSED;
+                        }
+
+                        CellColor();
+                    }
+                    catch (Exception)
+                    {
+                        Loader(true, true);
+                    }
+                }
             }
         }
 
@@ -339,132 +527,160 @@ namespace Print_Manager
             LoadPrintersToDVG();
         }
 
-        private void tsmiReloadPrintServer_Click(object sender, EventArgs e)
+        private void RunAsAdministrator()
         {
-            DialogResult dr = MessageBox.Show("Вы действительно хотите перезагрузить сервер печати?", 
-                Text, MessageBoxButtons.YesNo, MessageBoxIcon.Question, MessageBoxDefaultButton.Button2);
-            if (dr == DialogResult.Yes)
+            if (!IsRunAsAdministrator())
             {
-                Cursor = Cursors.WaitCursor;
-
-                Notification("Перезапуск сервера печати", Color.Blue);
-
-                ServiceController service = new ServiceController("Spooler");
-                if ((!service.Status.Equals(ServiceControllerStatus.Stopped)) &&
-                    (!service.Status.Equals(ServiceControllerStatus.StopPending)))
+                var processInfo = new ProcessStartInfo(Assembly.GetExecutingAssembly().CodeBase)
                 {
-                    service.Stop();
-                    service.WaitForStatus(ServiceControllerStatus.Stopped);
-                }
+                    UseShellExecute = true,
+                    Verb = "runas"
+                };
 
-                service.Start();
-                service.WaitForStatus(ServiceControllerStatus.Running);
-
-                Notification("Сервер печати перезагружен", Color.Green);
-
-                Cursor = Cursors.Default;
-            }
-        }
-
-        private void tsmiHideLaserPrinters_Click(object sender, EventArgs e)
-        {
-            if (tsmiHideLaserPrinters.Checked)
-            {
-                tsmiHideLaserPrinters.Checked = false;
-                Settings.Default.HideLaserPrinters = false;
-            }
-            else
-            {
-                tsmiHideLaserPrinters.Checked = true;
-                Settings.Default.HideLaserPrinters = true;
-            }
-
-            LoadPrintersToDVG();
-            Settings.Default.Save();
-        }
-
-        private void tsmiHidePlotters_Click(object sender, EventArgs e)
-        {
-            if (tsmiHidePlotters.Checked)
-            {
-                tsmiHidePlotters.Checked = false;
-                Settings.Default.HidePlotters = false;
-            }
-            else
-            {
-                tsmiHidePlotters.Checked = true;
-                Settings.Default.HidePlotters = true;
-            }
-
-            LoadPrintersToDVG();
-            Settings.Default.Save();
-        }
-
-        private void tsmiHideVirtualPrinters_Click(object sender, EventArgs e)
-        {
-            if (tsmiHideVirtualPrinters.Checked)
-            {
-                tsmiHideVirtualPrinters.Checked = false;
-                Settings.Default.HideVirtualPrinters = false;
-            }
-            else
-            {
-                tsmiHideVirtualPrinters.Checked = true;
-                Settings.Default.HideVirtualPrinters = true;
-            }
-
-            LoadPrintersToDVG();
-            Settings.Default.Save();
-        }
-
-        private void tsmiClearPrintServerFolder_Click(object sender, EventArgs e)
-        {
-            DialogResult dr = MessageBox.Show("Вы действительно хотите очистить папку?\nЭто очистит очередь печати у всех принтеров!", 
-                Text, MessageBoxButtons.YesNo, MessageBoxIcon.Warning, MessageBoxDefaultButton.Button2);
-            if (dr == DialogResult.Yes)
-            {
                 try
                 {
-                    Cursor = Cursors.WaitCursor;
+                    Process.Start(processInfo);
+                    Application.Exit();
+                }
+                catch (Exception)
+                {
+                    MessageBox.Show("Это приложение должно быть запущено от имени администратора.", Text, MessageBoxButtons.OK, MessageBoxIcon.Information);
+                }
+            }
+        }
 
+        private async void ReloadPrintServer()
+        {
+            if (isLoading) return;
+
+            RunAsAdministrator();
+
+            Loader(true);
+            Notification("Идет перезапуск сервера печати", Color.Blue);
+
+            try
+            {
+                await Task.Run(() =>
+                {
                     using (ServiceController service = new ServiceController("Spooler"))
                     {
                         if ((!service.Status.Equals(ServiceControllerStatus.Stopped)) &&
-                            (!service.Status.Equals(ServiceControllerStatus.StopPending)))
+                        (!service.Status.Equals(ServiceControllerStatus.StopPending)))
                         {
                             service.Stop();
                             service.WaitForStatus(ServiceControllerStatus.Stopped);
                         }
 
-                        string path = @"C:\Windows\system32\spool\PRINTERS";
-                        Directory.Delete(path, true);
-                        Directory.CreateDirectory(path);
-
-                        Notification("Папка сервера очищена", Color.Green);
-
                         service.Start();
                         service.WaitForStatus(ServiceControllerStatus.Running);
                     }
+                });
 
-                    Cursor = Cursors.Default;
+                Loader(false);
+                LoadPrintersToDVG(false);
+
+                Notification("Сервер печати перезагружен", Color.Green);
+            }
+            catch
+            {
+                Loader(false);
+                Notification("Не удалось перезагрузить сервер печати", Color.Red);
+            }
+        }
+
+        private void tsmiReloadPrintServer_Click(object sender, EventArgs e)
+        {
+            DialogResult dr = MessageBox.Show("Вы действительно хотите перезагрузить сервер печати?",
+                Text, MessageBoxButtons.YesNo, MessageBoxIcon.Question, MessageBoxDefaultButton.Button2);
+            if (dr == DialogResult.Yes)
+            {
+                ReloadPrintServer();
+            }
+        }
+
+        private void tsmiHideLaserPrinters_Click(object sender, EventArgs e)
+        {
+            bool isChecked = tsmiHideLaserPrinters.Checked;
+            tsmiHideLaserPrinters.Checked = !isChecked;
+            Settings.Default.HideLaserPrinters = !isChecked;
+            Settings.Default.Save();
+
+            LoadPrintersToDVG();
+        }
+
+        private void tsmiHidePlotters_Click(object sender, EventArgs e)
+        {
+            bool isChecked = tsmiHidePlotters.Checked;
+            tsmiHidePlotters.Checked = !isChecked;
+            Settings.Default.HidePlotters = !isChecked;
+            Settings.Default.Save();
+
+            LoadPrintersToDVG();
+        }
+
+        private void tsmiHideVirtualPrinters_Click(object sender, EventArgs e)
+        {
+            bool isChecked = tsmiHideVirtualPrinters.Checked;
+            tsmiHideVirtualPrinters.Checked = !isChecked;
+            Settings.Default.HideVirtualPrinters = !isChecked;
+            Settings.Default.Save();
+
+            LoadPrintersToDVG();
+        }
+
+        private async void tsmiClearPrintServerFolder_Click(object sender, EventArgs e)
+        {
+            DialogResult dr = MessageBox.Show("Вы действительно хотите очистить папку?\nЭто очистит очередь печати у всех принтеров!",
+                Text, MessageBoxButtons.YesNo, MessageBoxIcon.Warning, MessageBoxDefaultButton.Button2);
+            if (dr == DialogResult.Yes)
+            {
+                if (isLoading) return;
+
+                RunAsAdministrator();
+
+                Loader(true);
+                Notification("Идет очистка папки сервера печати", Color.Blue);
+
+                try
+                {
+                    await Task.Run(() =>
+                    {
+                        using (ServiceController service = new ServiceController("Spooler"))
+                        {
+                            service.Stop();
+                            service.WaitForStatus(ServiceControllerStatus.Stopped);
+                            string path = Environment.SystemDirectory + @"\spool\PRINTERS";
+                            Directory.Delete(path, true);
+                            Directory.CreateDirectory(path);
+
+                            service.Start();
+                            service.WaitForStatus(ServiceControllerStatus.Running);
+                        }
+                    });
+
+                    Loader(false);
+                    LoadPrintersToDVG(false);
+
+                    Notification("Папка сервера печати очищена", Color.Green);
                 }
                 catch
                 {
-                    Notification("Не удалось очистить папку сервера", Color.Red);
+                    Loader(false);
+                    Notification("Не удалось очистить папку сервера печати", Color.Red);
                 }
             }
         }
 
         private void tsmiDevicesAndPrinters_Click(object sender, EventArgs e)
         {
-            string controlpath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.System), "control.exe"); 
+            string controlpath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.System), "control.exe");
             Process.Start(controlpath, "/name Microsoft.DevicesAndPrinters");
         }
 
         private void printSettingsToolStripMenuItem_Click(object sender, EventArgs e)
         {
             if (dataGridView1.CurrentRow.Index != -1)
-                PrintUI("e", printerNameValue);
+                PrintUI("e", selectedPrinterFullName);
 
         }
 
@@ -472,11 +688,6 @@ namespace Print_Manager
         {
             if (WindowState == FormWindowState.Normal || WindowState == FormWindowState.Maximized)
                 LoadPrintersToDVG();
-        }
-
-        private void timer1_Tick(object sender, EventArgs e)
-        {
-            Notification("", Color.Empty);
         }
 
         private void installPrinterToolStripMenuItem_Click(object sender, EventArgs e)
@@ -491,9 +702,76 @@ namespace Print_Manager
             laserPrinters = Settings.Default.LaserPrinters.Split(',');
         }
 
-        private void settingsToolStripMenuItemToolStripMenuItem_Click(object sender, EventArgs e)
+        private void btnLoader_Click(object sender, EventArgs e)
         {
-            new fmSettings().ShowDialog();
+            ReloadPrintServer();
+        }
+
+        private void renamePrinterToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            using (fmRename rename = new fmRename(selectedPrinterFullName))
+            {
+                rename.ShowDialog();
+                LoadPrintersToDVG();
+            }
+        }
+
+        private void fmMain_FormClosing(object sender, FormClosingEventArgs e)
+        {
+            if (isLoading) ClearFastGIFTimer();
+        }
+
+        private void dataGridView1_CellMouseEnter(object sender, DataGridViewCellEventArgs e)
+        {
+            if (e.RowIndex != -1 && e.ColumnIndex == 7)
+            {
+                DataGridViewRow row = dataGridView1.Rows[e.RowIndex];
+
+                if (row.Cells[e.ColumnIndex].Value == null) return;
+
+                toolTip = new ToolTip
+                {
+                    InitialDelay = 1500
+                };
+
+                if (Convert.ToBoolean(row.Cells["isPausedPrinter"].Value))
+                {
+                    toolTip.SetToolTip(dataGridView1, "Возобновить печать");
+                    row.Cells[e.ColumnIndex].Value = Resources.play_hover;
+                }
+                else
+                {
+                    toolTip.SetToolTip(dataGridView1, "Приостановить печать");
+                    row.Cells[e.ColumnIndex].Value = Resources.pause_hover;
+                }
+            }
+        }
+
+        private void dataGridView1_CellMouseLeave(object sender, DataGridViewCellEventArgs e)
+        {
+            if (e.RowIndex != -1 && e.ColumnIndex == 7)
+            {
+                DataGridViewRow row = dataGridView1.Rows[e.RowIndex];
+
+                if (toolTip != null)
+                    toolTip.Dispose();
+
+                if (row.Cells[e.ColumnIndex].Value == null) return;
+
+                if (Convert.ToBoolean(row.Cells["isPausedPrinter"].Value))
+                {
+                    row.Cells[e.ColumnIndex].Value = Resources.play;
+                }
+                else
+                {
+                    row.Cells[e.ColumnIndex].Value = Resources.pause;
+                }
+            }
+        }
+
+        private void filterSettingsToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            new fmFilterSettings().ShowDialog();
             ReadPrinters();
             LoadPrintersToDVG();
         }

@@ -117,6 +117,47 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
+  <metadata name="isDefaultPrinter.UserAddedColumn" type="System.Boolean, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089">
+    <value>True</value>
+  </metadata>
+  <assembly alias="System.Drawing" name="System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" />
+  <data name="dataGridViewCellStyle12.NullValue" type="System.Drawing.Bitmap, System.Drawing" mimetype="application/x-microsoft.net.object.bytearray.base64">
+    <value>
+        Qk32AgAAAAAAADYAAAAoAAAADgAAABAAAAABABgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+        AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACEgoTGw8bGw8bGw8bGw8bGw8bGw8bG
+        w8bGw8bGw8bGw8bGw8bGw8YAAAAAAISChP///////////////////////////////////////////8bD
+        xgAAAAAAhIKE////////////////////////////////////////////xsPGAAAAAACEgoT/////////
+        ///////////////////////////////////Gw8YAAAAAAISChP//////////////////////////////
+        /////////////8bDxgAAAAAAhIKE////////////AAD/AAD/////////AAD/AAD/////////xsPGAAAA
+        AACEgoT///////////////8AAP8AAP8AAP8AAP/////////////Gw8YAAAAAAISChP//////////////
+        /////wAA/wAA/////////////////8bDxgAAAAAAhIKE////////////////AAD/AAD/AAD/AAD/////
+        ////////xsPGAAAAAACEgoT///////////8AAP8AAP////////8AAP8AAP/////////Gw8YAAAAAAISC
+        hP///////////////////////////////////////////8bDxgAAAAAAhIKE////////////////////
+        ////////////////////////xsPGAAAAAACEgoT/////////////////////////////////////////
+        ///Gw8YAAAAAAISChP///////////////////////////////////////////8bDxgAAAAAAhIKEhIKE
+        hIKEhIKEhIKEhIKEhIKEhIKEhIKEhIKEhIKEhIKEhIKEhIKEAAA=
+</value>
+  </data>
+  <metadata name="isNetworkPrinter.UserAddedColumn" type="System.Boolean, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089">
+    <value>True</value>
+  </metadata>
+  <data name="dataGridViewCellStyle16.NullValue" type="System.Drawing.Bitmap, System.Drawing" mimetype="application/x-microsoft.net.object.bytearray.base64">
+    <value>
+        Qk32AgAAAAAAADYAAAAoAAAADgAAABAAAAABABgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+        AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACEgoTGw8bGw8bGw8bGw8bGw8bGw8bG
+        w8bGw8bGw8bGw8bGw8bGw8YAAAAAAISChP///////////////////////////////////////////8bD
+        xgAAAAAAhIKE////////////////////////////////////////////xsPGAAAAAACEgoT/////////
+        ///////////////////////////////////Gw8YAAAAAAISChP//////////////////////////////
+        /////////////8bDxgAAAAAAhIKE////////////AAD/AAD/////////AAD/AAD/////////xsPGAAAA
+        AACEgoT///////////////8AAP8AAP8AAP8AAP/////////////Gw8YAAAAAAISChP//////////////
+        /////wAA/wAA/////////////////8bDxgAAAAAAhIKE////////////////AAD/AAD/AAD/AAD/////
+        ////////xsPGAAAAAACEgoT///////////8AAP8AAP////////8AAP8AAP/////////Gw8YAAAAAAISC
+        hP///////////////////////////////////////////8bDxgAAAAAAhIKE////////////////////
+        ////////////////////////xsPGAAAAAACEgoT/////////////////////////////////////////
+        ///Gw8YAAAAAAISChP///////////////////////////////////////////8bDxgAAAAAAhIKEhIKE
+        hIKEhIKEhIKEhIKEhIKEhIKEhIKEhIKEhIKEhIKEhIKEhIKEAAA=
+</value>
+  </data>
   <metadata name="Printer.UserAddedColumn" type="System.Boolean, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089">
     <value>True</value>
   </metadata>
@@ -126,10 +167,33 @@
   <metadata name="Status.UserAddedColumn" type="System.Boolean, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089">
     <value>True</value>
   </metadata>
+  <metadata name="PrinterFullName.UserAddedColumn" type="System.Boolean, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089">
+    <value>True</value>
+  </metadata>
   <metadata name="Default.UserAddedColumn" type="System.Boolean, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089">
     <value>True</value>
   </metadata>
-  <metadata name="PrinterFullName.UserAddedColumn" type="System.Boolean, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089">
+  <metadata name="QueueState.UserAddedColumn" type="System.Boolean, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089">
+    <value>True</value>
+  </metadata>
+  <data name="dataGridViewCellStyle17.NullValue" type="System.Drawing.Bitmap, System.Drawing" mimetype="application/x-microsoft.net.object.bytearray.base64">
+    <value>
+        Qk32AgAAAAAAADYAAAAoAAAADgAAABAAAAABABgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+        AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACEgoTGw8bGw8bGw8bGw8bGw8bGw8bG
+        w8bGw8bGw8bGw8bGw8bGw8YAAAAAAISChP///////////////////////////////////////////8bD
+        xgAAAAAAhIKE////////////////////////////////////////////xsPGAAAAAACEgoT/////////
+        ///////////////////////////////////Gw8YAAAAAAISChP//////////////////////////////
+        /////////////8bDxgAAAAAAhIKE////////////AAD/AAD/////////AAD/AAD/////////xsPGAAAA
+        AACEgoT///////////////8AAP8AAP8AAP8AAP/////////////Gw8YAAAAAAISChP//////////////
+        /////wAA/wAA/////////////////8bDxgAAAAAAhIKE////////////////AAD/AAD/AAD/AAD/////
+        ////////xsPGAAAAAACEgoT///////////8AAP8AAP////////8AAP8AAP/////////Gw8YAAAAAAISC
+        hP///////////////////////////////////////////8bDxgAAAAAAhIKE////////////////////
+        ////////////////////////xsPGAAAAAACEgoT/////////////////////////////////////////
+        ///Gw8YAAAAAAISChP///////////////////////////////////////////8bDxgAAAAAAhIKEhIKE
+        hIKEhIKEhIKEhIKEhIKEhIKEhIKEhIKEhIKEhIKEhIKEhIKEAAA=
+</value>
+  </data>
+  <metadata name="isPausedPrinter.UserAddedColumn" type="System.Boolean, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089">
     <value>True</value>
   </metadata>
   <metadata name="contextMenuStrip1.TrayLocation" type="System.Drawing.Point, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
@@ -138,7 +202,6 @@
   <metadata name="menuStrip1.TrayLocation" type="System.Drawing.Point, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
     <value>277, 17</value>
   </metadata>
-  <assembly alias="System.Drawing" name="System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" />
   <data name="tsmiRefresh.Image" type="System.Drawing.Bitmap, System.Drawing" mimetype="application/x-microsoft.net.object.bytearray.base64">
     <value>
         iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAA3NCSVQICAjb4U/gAAAAAXNSR0IArs4c
@@ -149,31 +212,6 @@
         eFed0uhzICLfi69YxGOt4wcYRufTbSEgnvx1EDDcvPWlhk6icboQgMN0Ue4IYTp/4V2XI8SwTuCJ5jII
         4JjotjqRYmoxgHEQkUeTIIAkAiQtriAlICOgLQTa1OIKUiOIiTAGBiFgmBICkibaMSKBI7KTwG5oee0x
         cr52kUCwTuJIXiT88a92ldEi5oRZwNqrbCLayX8+piXUkz9+zuR+ANjmF0joSUEQAAAAAElFTkSuQmCC
-</value>
-  </data>
-  <data name="tsmiReloadPrintServer.Image" type="System.Drawing.Bitmap, System.Drawing" mimetype="application/x-microsoft.net.object.bytearray.base64">
-    <value>
-        iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAABHNCSVQICAgIfAhkiAAAAAFzUkdCAK7O
-        HOkAAAAEZ0FNQQAAsY8L/GEFAAAACXBIWXMAAABtAAAAbQGOXB/KAAAAGXRFWHRTb2Z0d2FyZQB3d3cu
-        aW5rc2NhcGUub3Jnm+48GgAAAW1JREFUOE+lk71OwzAUhTMxIFhhAAlmGKnt0CARYocNmFiAiQdASEwg
-        xNCJp0GCGcHCCyB1QPxIDG0l2gFUx61UhMK9UCc3xAyI4Yvse885dpzYS9P0XxQm7TAcS6Q41IqdJ5I1
-        E8lfkohfailqnSAYp1pLNujGlUBL/gSm1A1rmhV/nZqRr4dWfgiij7KpxDtqiwFrC6NG8kciek0UP+1H
-        1ZletDgF4y2o3ZN+R69WJ7IAMB/ZJow1nMEkXQFBA11ES7Znex4ULvKGqFEjBc5g2+pMJG5sHQOebcO1
-        OgK9eq4pUPfgM7VtoR/6s66ArhJL36+Xm3GOdQ8+3VlWVGLXFYDQEGvGOuxA7NsAoPHbayBoAs2tNSMe
-        /mFG8QcS0oID2+mFYhoOdc5IcQLza9jdBg3LAvBhYl4B44CEuBgkiilnAKJjtgyiux8mSotu3VKYpJvz
-        I7DdA7xMw3vxBlwZxY7xohW0Q0qFv5F6n05UhuBx9Z8zAAAAAElFTkSuQmCC
-</value>
-  </data>
-  <data name="tsmiClearPrintServerFolder.Image" type="System.Drawing.Bitmap, System.Drawing" mimetype="application/x-microsoft.net.object.bytearray.base64">
-    <value>
-        iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAABHNCSVQICAgIfAhkiAAAAAFzUkdCAK7O
-        HOkAAAAEZ0FNQQAAsY8L/GEFAAAACXBIWXMAAABUAAAAVAGjrcQVAAAAGXRFWHRTb2Z0d2FyZQB3d3cu
-        aW5rc2NhcGUub3Jnm+48GgAAARZJREFUOE+lU8FOwzAMzQU+hnEbSY5AM3Fix/3VBoWNw74F+ArYh2xN
-        Fa0UhWc3qpq0lQZYepJrP9tx8ipSK+6uLq2RuTXqE7AB8GVOuUDrm19MzkujX0D+BvwI6nKm1sQNZY1R
-        AMn3hDyOTL1FTcLkYfIIykw9c3Gzs6qj5P11RB6J1cWtnAhr9FM3Uc5vfOWcd5tVGyOfYr0mmXpAA7WL
-        goDbLH1VVd5t15Gf8tDgA/uropcAeOrxyOieJsGBTnBIgowTG+z/v4Kdycdu8FeXaPRS0FPg42/PaPQF
-        a4HkmSRPgMy5mIylDHkOE4egX/10ehbKG+OfCfIEIVonwRdN7hV3je8ECqMbJo2wTuCjeNXu3JoQPx2a
-        JCG7U/GPAAAAAElFTkSuQmCC
 </value>
   </data>
   <data name="printServerToolStripMenuItem.Image" type="System.Drawing.Bitmap, System.Drawing" mimetype="application/x-microsoft.net.object.bytearray.base64">
@@ -205,7 +243,7 @@
   <data name="installPrinterToolStripMenuItem.Image" type="System.Drawing.Bitmap, System.Drawing" mimetype="application/x-microsoft.net.object.bytearray.base64">
     <value>
         iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAABHNCSVQICAgIfAhkiAAAAAFzUkdCAK7O
-        HOkAAAAEZ0FNQQAAsY8L/GEFAAAACXBIWXMAAABxAAAAcQEcP4B3AAAAGXRFWHRTb2Z0d2FyZQB3d3cu
+        HOkAAAAEZ0FNQQAAsY8L/GEFAAAACXBIWXMAAABwAAAAcAHOeGKTAAAAGXRFWHRTb2Z0d2FyZQB3d3cu
         aW5rc2NhcGUub3Jnm+48GgAAAfZJREFUOE9jgIH//xuYfr7asOLX2z1/fr7e9v/XuwMY+Ofrzb9/vty4
         DKQWqg0Bfr1ebwxU8P/3xzP/f73d+//3pwsY+Neb7f+Blvz/9XqzEVQbAvx+tdEOJEkMBqmFakMAsg0I
         KW0MDS5tmJnT3r549eYZh4jBILUgPSC9QAMafnT0x/6vzKv6n1FY+x/IJwX/ABnwP7K89n9ESf3/UEwF
@@ -218,6 +256,18 @@
         YII=
 </value>
   </data>
+  <data name="filterSettingsToolStripMenuItem.Image" type="System.Drawing.Bitmap, System.Drawing" mimetype="application/x-microsoft.net.object.bytearray.base64">
+    <value>
+        iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8
+        YQUAAAAJcEhZcwAAAHUAAAB1AePCB2UAAAAZdEVYdFNvZnR3YXJlAHd3dy5pbmtzY2FwZS5vcmeb7jwa
+        AAABP0lEQVQ4T82Su0vDYBTFP+gmFRQErTjq7OLirsZ8KZF8D6iOFbK7Oevu6ia+QFpw8hGFjir9H+po
+        q6A2qw2E671woRHbmtEfHEjOOffeIRGDcJQqOdbOS2UfSGWtF6S1Mxz/javMk1QmRvVYMXkcj8ZVak5q
+        c4gDH57WKzKwq/RMnu9XZrn2G4hEBe5FfW9nuYkXwQ3MMUcC30/I28eMOtTlqA/ciRLqs10rwsHuUiK1
+        7pSDYJHkKfNK3kttHKhDXR77CW7exBDC6lrsaZPg1ZTkGZOE206XMtQW1weDhct2vQjP5xNpWF3vklpn
+        k2kHPcq4Nhy4ElNYfKNrvZsCfF0XaJD0Dg0xzbXRYHmDh/qKhOU4Hzj0mFmQ7x/IgkO3mQUR2/n5Zwsi
+        ccF2fjILTvHTjrGdHxw8wss+vw5BiG/K3dXxIWVPzgAAAABJRU5ErkJggg==
+</value>
+  </data>
   <data name="filtresToolStripMenuItem.Image" type="System.Drawing.Bitmap, System.Drawing" mimetype="application/x-microsoft.net.object.bytearray.base64">
     <value>
         iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAA3NCSVQICAjb4U/gAAAAAXNSR0IArs4c
@@ -227,6 +277,31 @@
         vIahGANH3/9/P4ED0wAQvhDrjl0TEr4QG4SsB9UAEL4YuxmrRgjei64ehQPG56NUgQp/omkE4T9Aw3XQ
         1aNw4PhiTDeaZqDTo6dgU4shAMaXI2QxDAC5DItaDAEwvpoggWlAggI2tRgCYEwDAz79vxwpjk0thgAY
         Iwz4BQ68c4miWNUBMVZBsG0XY9bgCjgE/s8AAGK8/kir352/AAAAAElFTkSuQmCC
+</value>
+  </data>
+  <data name="tsmiReloadPrintServer.Image" type="System.Drawing.Bitmap, System.Drawing" mimetype="application/x-microsoft.net.object.bytearray.base64">
+    <value>
+        iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAABHNCSVQICAgIfAhkiAAAAAFzUkdCAK7O
+        HOkAAAAEZ0FNQQAAsY8L/GEFAAAACXBIWXMAAABtAAAAbQGOXB/KAAAAGXRFWHRTb2Z0d2FyZQB3d3cu
+        aW5rc2NhcGUub3Jnm+48GgAAAW1JREFUOE+lk71OwzAUhTMxIFhhAAlmGKnt0CARYocNmFiAiQdASEwg
+        xNCJp0GCGcHCCyB1QPxIDG0l2gFUx61UhMK9UCc3xAyI4Yvse885dpzYS9P0XxQm7TAcS6Q41IqdJ5I1
+        E8lfkohfailqnSAYp1pLNujGlUBL/gSm1A1rmhV/nZqRr4dWfgiij7KpxDtqiwFrC6NG8kciek0UP+1H
+        1ZletDgF4y2o3ZN+R69WJ7IAMB/ZJow1nMEkXQFBA11ES7Znex4ULvKGqFEjBc5g2+pMJG5sHQOebcO1
+        OgK9eq4pUPfgM7VtoR/6s66ArhJL36+Xm3GOdQ8+3VlWVGLXFYDQEGvGOuxA7NsAoPHbayBoAs2tNSMe
+        /mFG8QcS0oID2+mFYhoOdc5IcQLza9jdBg3LAvBhYl4B44CEuBgkiilnAKJjtgyiux8mSotu3VKYpJvz
+        I7DdA7xMw3vxBlwZxY7xohW0Q0qFv5F6n05UhuBx9Z8zAAAAAElFTkSuQmCC
+</value>
+  </data>
+  <data name="tsmiClearPrintServerFolder.Image" type="System.Drawing.Bitmap, System.Drawing" mimetype="application/x-microsoft.net.object.bytearray.base64">
+    <value>
+        iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAABHNCSVQICAgIfAhkiAAAAAFzUkdCAK7O
+        HOkAAAAEZ0FNQQAAsY8L/GEFAAAACXBIWXMAAABUAAAAVAGjrcQVAAAAGXRFWHRTb2Z0d2FyZQB3d3cu
+        aW5rc2NhcGUub3Jnm+48GgAAARZJREFUOE+lU8FOwzAMzQU+hnEbSY5AM3Fix/3VBoWNw74F+ArYh2xN
+        Fa0UhWc3qpq0lQZYepJrP9tx8ipSK+6uLq2RuTXqE7AB8GVOuUDrm19MzkujX0D+BvwI6nKm1sQNZY1R
+        AMn3hDyOTL1FTcLkYfIIykw9c3Gzs6qj5P11RB6J1cWtnAhr9FM3Uc5vfOWcd5tVGyOfYr0mmXpAA7WL
+        goDbLH1VVd5t15Gf8tDgA/uropcAeOrxyOieJsGBTnBIgowTG+z/v4Kdycdu8FeXaPRS0FPg42/PaPQF
+        a4HkmSRPgMy5mIylDHkOE4egX/10ehbKG+OfCfIEIVonwRdN7hV3je8ECqMbJo2wTuCjeNXu3JoQPx2a
+        JCG7U/GPAAAAAElFTkSuQmCC
 </value>
   </data>
   <metadata name="timer1.TrayLocation" type="System.Drawing.Point, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">

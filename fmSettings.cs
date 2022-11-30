@@ -6,13 +6,13 @@ using System.Windows.Forms;
 
 namespace Print_Manager
 {
-    public partial class fmSettings : Form
+    public partial class fmFilterSettings : Form
     {
         private string[] virtualPrinters;
         private string[] laserPrinters;
         private string[] plotters;
 
-        public fmSettings()
+        public fmFilterSettings()
         {
             InitializeComponent();
         }

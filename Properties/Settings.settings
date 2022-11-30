@@ -18,7 +18,7 @@
       <Value Profile="(Default)">t520,3880,7800</Value>
     </Setting>
     <Setting Name="VirtualPrinters" Type="System.String" Scope="User">
-      <Value Profile="(Default)">foxit,onenote</Value>
+      <Value Profile="(Default)">foxit,onenote,pdf</Value>
     </Setting>
   </Settings>
 </SettingsFile>

@@ -26,8 +26,8 @@
     <ProductName>Print Manager</ProductName>
     <PublisherName>Fotoluks</PublisherName>
     <SuiteName>Print Manager</SuiteName>
-    <ApplicationRevision>4</ApplicationRevision>
-    <ApplicationVersion>2.0.0.%2a</ApplicationVersion>
+    <ApplicationRevision>0</ApplicationRevision>
+    <ApplicationVersion>3.0.0.%2a</ApplicationVersion>
     <UseApplicationTrust>false</UseApplicationTrust>
     <CreateDesktopShortcut>true</CreateDesktopShortcut>
     <PublishWizardCompleted>true</PublishWizardCompleted>
@@ -97,18 +97,25 @@
     <Compile Include="fmMain.Designer.cs">
       <DependentUpon>fmMain.cs</DependentUpon>
     </Compile>
+    <Compile Include="fmRename.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="fmRename.Designer.cs">
+      <DependentUpon>fmRename.cs</DependentUpon>
+    </Compile>
     <Compile Include="fmSettings.cs">
       <SubType>Form</SubType>
     </Compile>
     <Compile Include="fmSettings.Designer.cs">
       <DependentUpon>fmSettings.cs</DependentUpon>
     </Compile>
-    <Compile Include="IniFiles.cs" />
-    <Compile Include="printersFlyoutMenuItem.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <EmbeddedResource Include="fmMain.resx">
       <DependentUpon>fmMain.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="fmRename.resx">
+      <DependentUpon>fmRename.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="fmSettings.resx">
       <DependentUpon>fmSettings.cs</DependentUpon>
@@ -121,8 +128,8 @@
     <Compile Include="Properties\Resources.Designer.cs">
       <AutoGen>True</AutoGen>
       <DependentUpon>Resources.resx</DependentUpon>
+      <DesignTime>True</DesignTime>
     </Compile>
-    <None Include="Print Manager_TemporaryKey.pfx" />
     <None Include="Properties\app.manifest" />
     <None Include="Properties\Settings.settings">
       <Generator>SettingsSingleFileGenerator</Generator>
@@ -138,10 +145,15 @@
     <None Include="App.config" />
   </ItemGroup>
   <ItemGroup>
-    <AdditionalFiles Include="laserPrinters.txt" />
-    <AdditionalFiles Include="plotters.txt" />
     <Content Include="printer.ico" />
-    <AdditionalFiles Include="virtualPrinters.txt" />
+    <None Include="Resources\pause.png" />
+    <None Include="Resources\play-hover.png" />
+    <None Include="Resources\play.png" />
+    <None Include="Resources\pause-hover.png" />
+    <None Include="Resources\loading.gif" />
+    <None Include="Resources\error.gif" />
+    <None Include="Resources\check.png" />
+    <None Include="Resources\wifi.png" />
   </ItemGroup>
   <ItemGroup>
     <BootstrapperPackage Include=".NETFramework,Version=v4.7.2">
